@@ -1,0 +1,15 @@
+C:\Users\steve\github\TestConsole\TestConsole\bin\Debug\net8.0\TestConsole.exe
+C:\Users\steve\github\TestConsole\TestConsole\bin\Debug\net8.0\TestConsole.deps.json
+C:\Users\steve\github\TestConsole\TestConsole\bin\Debug\net8.0\TestConsole.runtimeconfig.json
+C:\Users\steve\github\TestConsole\TestConsole\bin\Debug\net8.0\TestConsole.dll
+C:\Users\steve\github\TestConsole\TestConsole\bin\Debug\net8.0\TestConsole.pdb
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.AssemblyInfoInputs.cache
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.AssemblyInfo.cs
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.csproj.CoreCompileInputs.cache
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.sourcelink.json
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.dll
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\refint\TestConsole.dll
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.pdb
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\TestConsole.genruntimeconfig.cache
+C:\Users\steve\github\TestConsole\TestConsole\obj\Debug\net8.0\ref\TestConsole.dll
