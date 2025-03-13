@@ -1,6 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.RegularExpressions;
 using TestConsole;
+using ClosedXML.Excel;
 
 namespace Quickbooks_X_Exact {
     internal class Program {
@@ -30,8 +34,12 @@ namespace Quickbooks_X_Exact {
 
                     CustomerExact c = new() {
                         CompanyName = parts[1],
-                        BTW = parts[8],
-                        Adres = parts[2]
+                        Btw = parts[8],
+                        OriginalBtw = parts[8],
+                        Address = parts[2],
+                        Plaats = parts[3],
+                        Land = parts[4],
+
                     };
 
                     exacts.Add(c);
@@ -46,38 +54,167 @@ namespace Quickbooks_X_Exact {
 
                     CustomerQB c = new() {
                         CompanyName = parts[2],
-                        BTW = [parts[23], parts[24], parts[35]],
-                        Adres = [parts[21], parts[22]]
-
+                        BtwList = [parts[23], parts[24], parts[35]],
+                        AddressList = [parts[21], parts[22]],
+                        Email = parts[19],
+                        MainPhone = parts[14]
                     };
                     qbs.Add(c);
                 };
             }
 
+
+           
             #endregion
 
-            
+            List<CustomerExact> matchingcustomersonbtw = [];
+            int i = 1;
+
+            foreach (var item in exacts) {
+                foreach (var qb in qbs) {
+                    foreach (var btw in qb.BtwList) {
+
+                        if (!string.IsNullOrEmpty(btw)) {
+                            if (btw == item.Btw) {
+                                //Console.WriteLine($"ExactBTW: {item.Btw} ===== QBBTW {btw}  -> company: {item.CompanyName}");
+
+                                item.Email = qb.Email;
+                                item.MainPhone = qb.MainPhone;
 
 
-            List<CustomerExact> resultName = exacts
-                .Where(E => !qbs.Select(q => q.CompanyName).Contains(E.CompanyName, new MyComparer())).ToList();
+                                matchingcustomersonbtw.Add(item);
+                            }
+                        } else {
+                            continue;
+                        }
+
+                    }
 
 
-
-
-            List<CustomerExact> resultBtw = exacts
-                
-               .Where(E => !qbs.All(q => q.BTW.All(cn => BtwNumber(E.BTW) != BtwNumber(cn)))).ToList();
-
-            //Klopt nog niet :( qbs.adres is een array...
-            //List<CustomerExact> resultAdres = exacts
-            //    .Where(E => !qbs.Select(q => q.Adres).Contains(E.Adres, new MyComparer())).ToList();
-
-            int counter = 0;
-            foreach (var item in resultName) {
-                Console.WriteLine($"{counter++}, {item.CompanyName}");
-                
+                }
             }
+
+            matchingcustomersonbtw = matchingcustomersonbtw.DistinctBy(x => x.Btw).ToList();
+           
+
+            List<CustomerExact> matchingcustomersonName = [];
+            int counter = 1;
+
+            foreach (var c in exacts) {
+                foreach (var q in qbs) {
+                    if (c.IsCompanyNamaEqual(q.CompanyName)) {
+                        matchingcustomersonbtw.Add(c);
+                        c.MainPhone = q.MainPhone;
+                        c.Email = q.Email;
+                    }
+                }
+            }
+
+            matchingcustomersonbtw = matchingcustomersonbtw.DistinctBy(x => x.CompanyName).ToList();
+
+
+
+            foreach (var item in exacts) {
+                foreach (var qb in qbs) {
+                    if (item.IsAddressEqual(qb.AddressList)) {
+                        matchingcustomersonbtw.Add(item);
+                        item.Email = qb.Email;
+                        item.MainPhone = qb.MainPhone;
+                    }
+                }
+            }
+
+            matchingcustomersonbtw = matchingcustomersonbtw.DistinctBy(x => x.CompanyName).ToList();
+            List<CustomerExact> emptyList = [];
+            emptyList = exacts.Except(matchingcustomersonbtw).ToList();
+
+            string filePath = @"C:\Users\steve\Documents\nl-NL-Media-resources-files-templates-benl-accounts-xls.xlsx";
+
+
+            using (var workbook = new XLWorkbook(filePath)) {
+                IXLWorksheet worksheet;
+                worksheet = workbook.Worksheet("Invoer relaties");
+
+                int row = 3;
+                foreach (var item in matchingcustomersonbtw) {
+                    worksheet.Cell(row, 1).Value = item.CompanyName;
+                    worksheet.Cell(row, 8).Value = item.Address;
+                    worksheet.Cell(row, 12).Value = item.Plaats;
+                    worksheet.Cell(row, 13).Value = item.Land;
+                    worksheet.Cell(row, 14).Value = item.Email;
+                    worksheet.Cell(row, 16).Value = item.MainPhone;
+                    worksheet.Cell(row, 20).Value = item.OriginalBtw;
+                    worksheet.Cell(row, 28).Value = item.Email;
+
+                    row++;
+                }
+                foreach (var emty in emptyList) {
+                    worksheet.Cell(row, 1).Value = emty.CompanyName;
+                    worksheet.Cell(row, 8).Value = emty.Address;
+                    worksheet.Cell(row, 12).Value = emty.Plaats;
+                    worksheet.Cell(row, 13).Value = emty.Land;
+                    worksheet.Cell(row, 14).Value = emty.Email;
+                    worksheet.Cell(row, 16).Value = emty.MainPhone;
+                    worksheet.Cell(row, 20).Value = emty.OriginalBtw;
+                    worksheet.Cell(row, 28).Value = emty.Email;
+                    row++;
+                }
+                workbook.Save();
+            }
+            Console.WriteLine("Data succesvol ingevoegd in het Excel-bestand vanaf rij 2.");
+
+
+
+            ////matchingcustomersonbtw = matchingcustomersonbtw.distinctby(x => x.companyname).tolist();
+
+            //matchingcustomersonbtw = matchingcustomersonbtw.Except(matchingcustomersonName).ToList();
+
+
+
+
+            //List<CustomerQB> qbNames = qbs
+            //    .Select(q => q.CompanyName).ToList();
+
+
+            //    .Contains(E.CompanyName, new MyComparer())).ToList();
+
+
+            // resterende niet matchende customers
+            //List<CustomerExact> NotMatchingListAfterName = exacts
+            //    .Where(E => !qbs.Select(q => q.CompanyName).Contains(E.CompanyName, new MyComparer())).ToList();
+
+
+
+
+            //List<CustomerExact> NotMatchingListAfterBTW = NotMatchingListAfterName
+
+            //   .Where(E => !qbs.All(q => q.BTWList.All(x => BtwNumber(E.BTW) != BtwNumber(x)))).ToList();
+
+
+
+
+
+            //List<CustomerExact> NotMatchingListAfterAdres = NotMatchingListAfterBTW
+            //    .Where(E => !qbs.Select(q => q.AdresList.Select))
+
+
+
+
+
+            //List<CustomerExact> NotMatchingListAfterAdres = NotMatchingListAfterBTW.Where(c => !c.Adres.Equals(qbs.ForEach(x => x.AdresList.ForEach(QBadres => QBadres.Contains(c.Adres)))
+
+
+
+
+            //matchingCustomersOnAddress = matchingCustomersOnAddress.DistinctBy(x => x.CompanyName).ToList();
+
+            //matchingCustomersOnAddress = matchingCustomersOnBtw.Except(matchingCustomersOnAddress).ToList();
+
+            //int counter = 0;
+            //foreach (var item in matchingCustomersOnAddress) {
+            //    Console.WriteLine($"{counter++}, {item.CompanyName} --------- BTW: {item.BTW} --------- ADRES: {item.Adres}");
+
+            //}
 
 
 
@@ -237,29 +374,27 @@ namespace Quickbooks_X_Exact {
 
             //Console.ReadKey();
 
-            static string BtwNumber(string btw) {
-                if (btw is null) return string.Empty;
-                return Regex.Replace(btw, @"\D", ""); // Verwijdert alle niet-numerieke tekens
 
-            }
+
+
         }
-
-        class MyComparer : IEqualityComparer<string> {
-            public bool Equals(string? x, string? y) {
-                if (x is null || y is null) return false;
-
-                // Clean the strings by removing whitespace and converting to uppercase
-                string cleanX = x.Replace(" ", "").ToUpper();
-                string cleanY = y.Replace(" ", "").ToUpper();
-
-                // Check if either string contains the other
-                return cleanX.Contains(cleanY) || cleanY.Contains(cleanX);
-            }
-
-            public int GetHashCode([DisallowNull] string obj) {
-                return 0;
-            }
-        }
-
     }
+
+    class MyComparer : IEqualityComparer<string> {
+        public bool Equals(string? x, string? y) {
+            if (string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y)) return false;
+
+            // Clean the strings by removing whitespace and converting to uppercase
+            string cleanX = x.Replace(" ", "").ToUpper();
+            string cleanY = y.Replace(" ", "").ToUpper();
+
+            // Check if either string contains the other
+            return cleanX.Contains(cleanY) || cleanY.Contains(cleanX);
+        }
+
+        public int GetHashCode([DisallowNull] string obj) {
+            return 0;
+        }
+    }
+
 }
